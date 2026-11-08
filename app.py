@@ -27,6 +27,7 @@ st.set_page_config(
 )
 
 st.title("🌱 Dry Bean Classification")
+
 st.write(
     "This application evaluates five Machine Learning "
     "classification models using the Dry Bean Dataset."
@@ -113,22 +114,37 @@ if uploaded_file is not None:
         # 6. Validate dataset
         # --------------------------------------------------
 
-        if "Class" not in data.columns:
-            st.error("The uploaded CSV must contain a 'Class' column.")
-            st.stop()
-
         if data.empty:
             st.error("The uploaded dataset is empty.")
+            st.stop()
+
+        if "Class" not in data.columns:
+            st.error(
+                "The uploaded CSV must contain a 'Class' column."
+            )
             st.stop()
 
         X = data.drop(columns=["Class"])
         y = data["Class"]
 
         if y.isnull().any():
-            st.error("The target column contains missing values.")
+            st.error(
+                "The target column contains missing values."
+            )
+            st.stop()
+
+        # Check whether target classes are known to the selected model
+        unknown_classes = set(y.unique()) - set(model.classes_)
+
+        if unknown_classes:
+            st.error(
+                "Unknown target classes found: "
+                + str(unknown_classes)
+            )
             st.stop()
 
         if hasattr(model, "feature_names_in_"):
+
             expected_features = list(model.feature_names_in_)
 
             missing_features = [
@@ -152,19 +168,32 @@ if uploaded_file is not None:
 
             X = X[expected_features]
 
+        # Check the number of input features
+        if X.shape[1] != 16:
+            st.error(
+                "The dataset must contain exactly 16 input features."
+            )
+            st.stop()
+
         if X.isnull().any().any():
-            st.error("Input features contain missing values.")
+            st.error(
+                "Input features contain missing values."
+            )
             st.stop()
 
         if not all(
             pd.api.types.is_numeric_dtype(X[column])
             for column in X.columns
         ):
-            st.error("All input features must be numeric.")
+            st.error(
+                "All input features must be numeric."
+            )
             st.stop()
 
         if not np.isfinite(X.to_numpy(dtype=float)).all():
-            st.error("Input features contain infinite or invalid values.")
+            st.error(
+                "Input features contain infinite or invalid values."
+            )
             st.stop()
 
         # --------------------------------------------------
@@ -180,19 +209,22 @@ if uploaded_file is not None:
         accuracy = accuracy_score(y, predictions)
 
         precision = precision_score(
-            y, predictions,
+            y,
+            predictions,
             average="macro",
             zero_division=0
         )
 
         recall = recall_score(
-            y, predictions,
+            y,
+            predictions,
             average="macro",
             zero_division=0
         )
 
         f1 = f1_score(
-            y, predictions,
+            y,
+            predictions,
             average="macro",
             zero_division=0
         )
@@ -210,8 +242,11 @@ if uploaded_file is not None:
                 labels=model.classes_
             )
 
-        except Exception:
+        except Exception as error:
             auc = None
+            st.warning(
+                "AUC could not be calculated: " + str(error)
+            )
 
         # --------------------------------------------------
         # 9. Display evaluation metrics
@@ -273,7 +308,7 @@ if uploaded_file is not None:
         st.text(report)
 
         # --------------------------------------------------
-        # 12. Download predictions
+        # 12. Download Predictions
         # --------------------------------------------------
 
         st.subheader("Download Predictions")
@@ -281,7 +316,9 @@ if uploaded_file is not None:
         results = data.copy()
         results["Predicted_Class"] = predictions
 
-        csv_output = results.to_csv(index=False).encode("utf-8")
+        csv_output = results.to_csv(
+            index=False
+        ).encode("utf-8")
 
         st.download_button(
             label="Download Prediction Results",
@@ -291,7 +328,11 @@ if uploaded_file is not None:
         )
 
     except Exception as error:
-        st.error("Something went wrong: " + str(error))
+        st.error(
+            "Something went wrong: " + str(error)
+        )
 
 else:
-    st.info("Please upload the test_data.csv file to evaluate the model.")
+    st.info(
+        "Please upload the test_data.csv file to evaluate the model."
+    )
