@@ -101,5 +101,5 @@ The Streamlit application allows users to:
 - View the confusion matrix and classification report.
 - Download prediction results.
 
-**Live Streamlit Application:** To be added after deployment.
+**Live Streamlit Application:** https://2026ak05059mlassignment2git-erdgnbujwnglsacezkq8ph.streamlit.app/.
 
